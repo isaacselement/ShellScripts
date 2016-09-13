@@ -1,0 +1,12 @@
+
+.DS_Store
+
+*.swp
+
+*.SWP
+
+*.class
+
+bin/*
+
+*/bin/*

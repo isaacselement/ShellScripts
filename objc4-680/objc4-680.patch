@@ -1,0 +1,282 @@
+diff -Naur ~/Downloads/objc4-680/include/CrashReporterClient.h ~/Desktop/objc4-680/include/CrashReporterClient.h
+--- ~/Downloads/objc4-680/include/CrashReporterClient.h	2016-09-12 18:03:38.000000000 +0800
++++ ~/Desktop/objc4-680/include/CrashReporterClient.h	2016-09-09 13:50:30.000000000 +0800
+@@ -33,6 +33,7 @@
+ /* Fake the CrashReporterClient API */
+ #define CRGetCrashLogMessage() 0
+ #define CRSetCrashLogMessage(x) /* nothing */
++#define CRSetCrashLogMessage2(x) /* nothing */
+ 
+ #else /* !LIBC_NO_LIBCRASHREPORTERCLIENT */
+ 
+diff -Naur ~/Downloads/objc4-680/include/System/pthread_machdep.h ~/Desktop/objc4-680/include/System/pthread_machdep.h
+--- ~/Downloads/objc4-680/include/System/pthread_machdep.h	2016-09-12 18:01:48.000000000 +0800
++++ ~/Desktop/objc4-680/include/System/pthread_machdep.h	2016-09-08 18:08:18.000000000 +0800
+@@ -211,25 +211,25 @@
+ }
+ #endif
+ 
+-typedef int pthread_lock_t;
++//typedef int pthread_lock_t;
+ 
+-__inline__ static int
+-_pthread_has_direct_tsd(void)
+-{
+-#if TARGET_IPHONE_SIMULATOR
+-	/* Simulator will use the host implementation, so bypass the macro that is in the target code */
+-	return 0;
+-#elif defined(__ppc__)
+-	int *caps = (int *)_COMM_PAGE_CPU_CAPABILITIES;
+-	if (*caps & kFastThreadLocalStorage) {
+-		return 1;
+-	} else {
+-		return 0;
+-	}
+-#else
+-	return 1;
+-#endif
+-}
++//__inline__ static int
++//_pthread_has_direct_tsd(void)
++//{
++//#if TARGET_IPHONE_SIMULATOR
++//	/* Simulator will use the host implementation, so bypass the macro that is in the target code */
++//	return 0;
++//#elif defined(__ppc__)
++//	int *caps = (int *)_COMM_PAGE_CPU_CAPABILITIES;
++//	if (*caps & kFastThreadLocalStorage) {
++//		return 1;
++//	} else {
++//		return 0;
++//	}
++//#else
++//	return 1;
++//#endif
++//}
+ 
+ #if TARGET_IPHONE_SIMULATOR || defined(__ppc__) || defined(__ppc64__) || \
+ 	(defined(__arm__) && !defined(_ARM_ARCH_7) && defined(_ARM_ARCH_6) && defined(__thumb__))
+@@ -240,58 +240,58 @@
+ #else
+ 
+ /* To be used with static constant keys only */
+-__inline__ static void *
+-_pthread_getspecific_direct(unsigned long slot)
+-{
+-	void *ret;
+-#if defined(__i386__) || defined(__x86_64__)
+-	__asm__("mov %%gs:%1, %0" : "=r" (ret) : "m" (*(void **)(slot * sizeof(void *))));
+-#elif (defined(__arm__) && (defined(_ARM_ARCH_6) || defined(_ARM_ARCH_5))) 
+-	void **__pthread_tsd;
+-#if defined(__arm__) && defined(_ARM_ARCH_6)
+-	uintptr_t __pthread_tpid;
+-	__asm__("mrc p15, 0, %0, c13, c0, 3" : "=r" (__pthread_tpid));
+-	__pthread_tsd = (void**)(__pthread_tpid & ~0x3ul);
+-#elif defined(__arm__) && defined(_ARM_ARCH_5)
+-	register uintptr_t __pthread_tpid asm ("r9");
+-	__pthread_tsd = (void**)__pthread_tpid;
+-#endif
+-	ret = __pthread_tsd[slot];
+-#else
+-#error no _pthread_getspecific_direct implementation for this arch
+-#endif
+-	return ret;
+-}
++//__inline__ static void *
++//_pthread_getspecific_direct(unsigned long slot)
++//{
++//	void *ret;
++//#if defined(__i386__) || defined(__x86_64__)
++//	__asm__("mov %%gs:%1, %0" : "=r" (ret) : "m" (*(void **)(slot * sizeof(void *))));
++//#elif (defined(__arm__) && (defined(_ARM_ARCH_6) || defined(_ARM_ARCH_5))) 
++//	void **__pthread_tsd;
++//#if defined(__arm__) && defined(_ARM_ARCH_6)
++//	uintptr_t __pthread_tpid;
++//	__asm__("mrc p15, 0, %0, c13, c0, 3" : "=r" (__pthread_tpid));
++//	__pthread_tsd = (void**)(__pthread_tpid & ~0x3ul);
++//#elif defined(__arm__) && defined(_ARM_ARCH_5)
++//	register uintptr_t __pthread_tpid asm ("r9");
++//	__pthread_tsd = (void**)__pthread_tpid;
++//#endif
++//	ret = __pthread_tsd[slot];
++//#else
++//#error no _pthread_getspecific_direct implementation for this arch
++//#endif
++//	return ret;
++//}
+ 
+ /* To be used with static constant keys only */
+-__inline__ static int
+-_pthread_setspecific_direct(unsigned long slot, void * val)
+-{
+-#if defined(__i386__)
+-#if defined(__PIC__)
+-	__asm__("movl %1,%%gs:%0" : "=m" (*(void **)(slot * sizeof(void *))) : "rn" (val));
+-#else
+-	__asm__("movl %1,%%gs:%0" : "=m" (*(void **)(slot * sizeof(void *))) : "ri" (val));
+-#endif
+-#elif defined(__x86_64__)
+-	/* PIC is free and cannot be disabled, even with: gcc -mdynamic-no-pic ... */
+-	__asm__("movq %1,%%gs:%0" : "=m" (*(void **)(slot * sizeof(void *))) : "rn" (val));
+-#elif (defined(__arm__) && (defined(_ARM_ARCH_6) || defined(_ARM_ARCH_5))) 
+-	void **__pthread_tsd;
+-#if defined(__arm__) && defined(_ARM_ARCH_6)
+-	uintptr_t __pthread_tpid;
+-	__asm__("mrc p15, 0, %0, c13, c0, 3" : "=r" (__pthread_tpid));
+-	__pthread_tsd = (void**)(__pthread_tpid & ~0x3ul);
+-#elif defined(__arm__) && defined(_ARM_ARCH_5)
+-	register uintptr_t __pthread_tpid asm ("r9");
+-	__pthread_tsd = (void**)__pthread_tpid;
+-#endif
+-	__pthread_tsd[slot] = val;
+-#else
+-#error no _pthread_setspecific_direct implementation for this arch
+-#endif
+-	return 0;
+-}
++//__inline__ static int
++//_pthread_setspecific_direct(unsigned long slot, void * val)
++//{
++//#if defined(__i386__)
++//#if defined(__PIC__)
++//	__asm__("movl %1,%%gs:%0" : "=m" (*(void **)(slot * sizeof(void *))) : "rn" (val));
++//#else
++//	__asm__("movl %1,%%gs:%0" : "=m" (*(void **)(slot * sizeof(void *))) : "ri" (val));
++//#endif
++//#elif defined(__x86_64__)
++//	/* PIC is free and cannot be disabled, even with: gcc -mdynamic-no-pic ... */
++//	__asm__("movq %1,%%gs:%0" : "=m" (*(void **)(slot * sizeof(void *))) : "rn" (val));
++//#elif (defined(__arm__) && (defined(_ARM_ARCH_6) || defined(_ARM_ARCH_5))) 
++//	void **__pthread_tsd;
++//#if defined(__arm__) && defined(_ARM_ARCH_6)
++//	uintptr_t __pthread_tpid;
++//	__asm__("mrc p15, 0, %0, c13, c0, 3" : "=r" (__pthread_tpid));
++//	__pthread_tsd = (void**)(__pthread_tpid & ~0x3ul);
++//#elif defined(__arm__) && defined(_ARM_ARCH_5)
++//	register uintptr_t __pthread_tpid asm ("r9");
++//	__pthread_tsd = (void**)__pthread_tpid;
++//#endif
++//	__pthread_tsd[slot] = val;
++//#else
++//#error no _pthread_setspecific_direct implementation for this arch
++//#endif
++//	return 0;
++//}
+ 
+ #endif
+
+diff -Naur ~/Downloads/objc4-680/objc.xcodeproj/project.pbxproj ~/Desktop/objc4-680/objc.xcodeproj/project.pbxproj
+--- ~/Downloads/objc4-680/objc.xcodeproj/project.pbxproj	2015-03-26 16:54:07.000000000 +0800
++++ ~/Desktop/objc4-680/objc.xcodeproj/project.pbxproj	2016-09-12 18:39:12.000000000 +0800
+@@ -600,6 +600,10 @@
+ 				EXECUTABLE_PREFIX = lib;
+ 				GCC_CW_ASM_SYNTAX = NO;
+ 				GCC_OPTIMIZATION_LEVEL = 0;
++				GCC_PREPROCESSOR_DEFINITIONS = (
++					"OS_OBJECT_USE_OBJC=0",
++					LIBC_NO_LIBCRASHREPORTERCLIENT,
++				);
+ 				GCC_THREADSAFE_STATICS = NO;
+ 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+ 				HEADER_SEARCH_PATHS = (
+@@ -607,9 +611,10 @@
+ 					"$(DSTROOT)/usr/local/include/**",
+ 					"$(CONFIGURATION_BUILD_DIR)/usr/include/**",
+ 					"$(CONFIGURATION_BUILD_DIR)/usr/local/include/**",
++					"$(SRCROOT)/include",
+ 				);
+ 				INSTALL_PATH = /usr/lib;
+-				ORDER_FILE = "$(SDKROOT)/AppleInternal/OrderFiles/libobjc.order";
++				ORDER_FILE = libobjc.order;
+ 				"ORDER_FILE[sdk=iphonesimulator*]" = "";
+ 				OTHER_CFLAGS = (
+ 					"-fdollars-in-identifiers",
+@@ -629,7 +634,6 @@
+ 				);
+ 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=*]" = "-lc++abi";
+ 				"OTHER_LDFLAGS[sdk=macosx*]" = (
+-					"-lCrashReporterClient",
+ 					"-lauto",
+ 					"-lc++abi",
+ 					"-Xlinker",
+@@ -654,6 +658,11 @@
+ 				DYLIB_CURRENT_VERSION = 228;
+ 				EXECUTABLE_PREFIX = lib;
+ 				GCC_CW_ASM_SYNTAX = NO;
++				GCC_PREPROCESSOR_DEFINITIONS = (
++					"OS_OBJECT_USE_OBJC=0",
++					"NDEBUG=1",
++					LIBC_NO_LIBCRASHREPORTERCLIENT,
++				);
+ 				GCC_THREADSAFE_STATICS = NO;
+ 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
+ 				HEADER_SEARCH_PATHS = (
+@@ -661,9 +670,10 @@
+ 					"$(DSTROOT)/usr/local/include/**",
+ 					"$(CONFIGURATION_BUILD_DIR)/usr/include/**",
+ 					"$(CONFIGURATION_BUILD_DIR)/usr/local/include/**",
++					"$(SRCROOT)/include",
+ 				);
+ 				INSTALL_PATH = /usr/lib;
+-				ORDER_FILE = "$(SDKROOT)/AppleInternal/OrderFiles/libobjc.order";
++				ORDER_FILE = libobjc.order;
+ 				"ORDER_FILE[sdk=iphonesimulator*]" = "";
+ 				OTHER_CFLAGS = (
+ 					"-fdollars-in-identifiers",
+@@ -683,7 +693,6 @@
+ 				);
+ 				"OTHER_LDFLAGS[sdk=iphonesimulator*][arch=*]" = "-lc++abi";
+ 				"OTHER_LDFLAGS[sdk=macosx*]" = (
+-					"-lCrashReporterClient",
+ 					"-lauto",
+ 					"-lc++abi",
+ 					"-Xlinker",
+
+diff -Naur ~/Downloads/objc4-680/runtime/objc-os.h ~/Desktop/objc4-680/runtime/objc-os.h
+--- ~/Downloads/objc4-680/runtime/objc-os.h	2015-07-11 08:44:22.000000000 +0800
++++ ~/Desktop/objc4-680/runtime/objc-os.h	2016-09-08 18:51:22.000000000 +0800
+@@ -98,11 +98,12 @@
+ #   include <mach-o/getsect.h>
+ #   include <mach-o/dyld_priv.h>
+ #   include <malloc/malloc.h>
+-#   include <os/lock_private.h>
++//#   include <os/lock_private.h>
+ #   include <libkern/OSAtomic.h>
+ #   include <libkern/OSCacheControl.h>
+ #   include <System/pthread_machdep.h>
+ #   include "objc-probes.h"  // generated dtrace probe definitions.
++#   include <pthread/tsd_private.h>
+ 
+ // Some libc functions call objc_msgSend() 
+ // so we can't use them without deadlocks.
+@@ -113,6 +114,20 @@
+ #define ALWAYS_INLINE inline __attribute__((always_inline))
+ #define NEVER_INLINE inline __attribute__((noinline))
+ 
++typedef OSSpinLock os_lock_handoff_s;
++#define OS_LOCK_HANDOFF_INIT OS_SPINLOCK_INIT
++
++ALWAYS_INLINE void os_lock_lock(volatile os_lock_handoff_s *lock) {
++    return OSSpinLockLock(lock);
++}
++
++ALWAYS_INLINE void os_lock_unlock(volatile os_lock_handoff_s *lock) {
++    return OSSpinLockUnlock(lock);
++}
++
++ALWAYS_INLINE bool os_lock_trylock(volatile os_lock_handoff_s *lock) {
++    return OSSpinLockTry(lock);
++}
+ 
+ 
+ static ALWAYS_INLINE uintptr_t 
+@@ -775,6 +790,9 @@
+ }
+ 
+ #if SUPPORT_QOS_HACK
++
++#include <pthread/qos_private.h>
++
+ static inline pthread_priority_t pthread_self_priority_direct() 
+ {
+     pthread_priority_t pri = (pthread_priority_t)

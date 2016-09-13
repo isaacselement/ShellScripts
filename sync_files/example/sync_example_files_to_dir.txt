@@ -1,0 +1,6 @@
+:/Users/element/Workspaces/iOS/Modules/
+:/Users/element/Workspaces/iOS/Framework/
+
+View/Components/WebViewProgress->View/
+Data/Localize/LocalizeManager.m->Data/Localize/
+Data/Localize/LocalizeManager.h->Data/Localize/
